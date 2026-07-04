@@ -1,0 +1,21 @@
+# Dependencies
+**/node_modules/
+
+# Build outputs
+**/dist/
+**/.next/
+**/build/
+**/*.tsbuildinfo
+
+# Environment variables (Credentials)
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Agent customizations
+.agents/
+skills-lock.json
+
+# OS files
+.DS_Store
+Thumbs.db

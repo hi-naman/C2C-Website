@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "leaderboard_entries" ALTER COLUMN "score" SET DEFAULT 0,
+ALTER COLUMN "score" SET DATA TYPE DOUBLE PRECISION;

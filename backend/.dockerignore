@@ -1,0 +1,11 @@
+node_modules
+dist
+.env
+.git
+.gitignore
+*.md
+benchmark
+prisma/seed-benchmark.ts
+prisma/cleanup-benchmark.ts
+npm-debug.log
+.vscode

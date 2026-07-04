@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  SENIOR
+  MEMBER
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  avatarUrl String?
+  googleId  String   @unique
+  role      Role     @default(MEMBER)
+  year      Int
+  bio       String?
+  phone     String?  @unique
+  isProfileComplete Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessionsCreated Session[]
+  hackerrankUsername String? @unique
+
+  contestsCreated    Contest[]
+  leaderboardEntries LeaderboardEntry[]
+  campsCreated Camp[]
+  hackathonsCreated Hackathon[]
+  teamMemberships   TeamMember[]
+  registrations Registration[]
+  forumPosts    ForumPost[]
+  forumComments ForumComment[]
+  upvotes       Upvote[]
+
+  @@map("users")
+}
+
+enum YearTarget {
+  FIRST
+  SECOND
+  THIRD
+  FOURTH
+  ALL
+}
+
+model Session {
+  id            String     @id @default(uuid())
+  title         String
+  speakerName   String
+  speakerBio    String?
+  description   String
+  date          DateTime
+  venue         String
+  recordingUrl  String?
+  slidesUrl     String?
+  tags          String[]
+  yearTarget    YearTarget @default(ALL)
+  createdBy     String
+  creator       User       @relation(fields: [createdBy], references: [id])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  calendarEvent CalendarEvent?
+
+  @@map("sessions")
+}
+
+model Contest {
+  id             String     @id @default(uuid())
+  title          String
+  description    String
+  hackerrankUrl  String
+  accessCode String?
+  startTime      DateTime
+  endTime        DateTime
+  yearTarget     YearTarget @default(ALL)
+  createdBy      String
+  creator        User       @relation(fields: [createdBy], references: [id])
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  leaderboardEntries LeaderboardEntry[]
+  calendarEvent CalendarEvent?
+
+  @@map("contests")
+}
+
+model LeaderboardEntry {
+  id         String   @id @default(uuid())
+  userId     String
+  contestId  String
+  score      Float      @default(0)
+  rank       Int?
+  syncedAt   DateTime @default(now())
+
+  user     User    @relation(fields: [userId], references: [id])
+  contest  Contest @relation(fields: [contestId], references: [id])
+
+  @@unique([userId, contestId])
+  @@map("leaderboard_entries")
+}
+
+enum CampType {
+  WINTER
+  SUMMER
+}
+
+model Camp {
+  id          String     @id @default(uuid())
+  title       String
+  description String
+  type        CampType
+  startDate   DateTime
+  endDate     DateTime
+  venue       String?
+  maxSeats    Int?
+  tags        String[]
+  yearTarget  YearTarget @default(ALL)
+  createdBy   String
+  creator     User       @relation(fields: [createdBy], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  registrations Registration[]
+  calendarEvent CalendarEvent?
+
+  @@map("camps")
+}
+
+
+model Hackathon {
+  id                 String   @id @default(uuid())
+  title              String
+  description        String
+  problemStatement   String
+  rules              String?
+  prizes             String?
+  regDeadline        DateTime
+  submissionDeadline DateTime
+  maxTeamSize        Int      @default(4)
+  minTeamSize        Int      @default(1)
+  tags               String[]
+  createdBy          String
+  creator            User     @relation(fields: [createdBy], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  teams HackathonTeam[]
+  teamMembers TeamMember[]
+  registrations Registration[]
+  calendarEvent CalendarEvent?
+
+  @@map("hackathons")
+}
+
+model HackathonTeam {
+  id            String    @id @default(uuid())
+  hackathonId   String
+  teamName      String
+  joinCode      String    @unique
+  submissionUrl String?
+  repoUrl       String?
+  score         Int?
+  submittedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  
+  hackathon Hackathon    @relation(fields: [hackathonId], references: [id])
+  members   TeamMember[]
+
+  @@map("hackathon_teams")
+}
+
+model TeamMember {
+  id          String @id @default(uuid())
+  teamId      String
+  userId      String
+  hackathonId String
+
+  team      HackathonTeam @relation(fields: [teamId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
+  hackathon Hackathon     @relation(fields: [hackathonId], references: [id])
+
+  @@unique([userId, hackathonId])
+  @@map("team_members")
+}
+
+enum EventType {
+  CAMP
+  HACKATHON
+  SESSION
+  CONTEST
+}
+
+model Registration {
+  id           String    @id @default(uuid())
+  userId       String
+  eventType    EventType
+  registeredAt DateTime  @default(now())
+
+  campId      String?
+  hackathonId String?
+
+  user      User       @relation(fields: [userId], references: [id])
+  camp      Camp?      @relation(fields: [campId], references: [id])
+  hackathon Hackathon? @relation(fields: [hackathonId], references: [id])
+
+  @@unique([userId, campId])
+  @@unique([userId, hackathonId])
+  @@map("registrations")
+}
+
+model ForumPost {
+  id          String   @id @default(uuid())
+  authorId    String
+  title       String
+  content     String
+  tags        String[]
+  upvoteCount Int      @default(0)
+  isDeleted   Boolean  @default(false)
+  isPinned    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  imageUrls String[]
+
+  author   User           @relation(fields: [authorId], references: [id])
+  comments ForumComment[]
+  upvotes  Upvote[]
+
+  @@map("forum_posts")
+}
+
+model ForumComment {
+  id        String   @id @default(uuid())
+  postId    String
+  authorId  String
+  content   String
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post   ForumPost @relation(fields: [postId], references: [id])
+  author User      @relation(fields: [authorId], references: [id])
+
+  @@map("forum_comments")
+}
+
+model Upvote {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User      @relation(fields: [userId], references: [id])
+  post ForumPost @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId])
+  @@map("upvotes")
+}
+
+
+model CalendarEvent {
+  id         String     @id @default(uuid())
+  title      String
+  eventType  EventType
+  date       DateTime
+  endDate    DateTime?
+  yearTarget YearTarget @default(ALL)
+
+  sessionId   String?   @unique
+  contestId   String?   @unique
+  campId      String?   @unique
+  hackathonId String?   @unique
+
+  session   Session?   @relation(fields: [sessionId], references: [id])
+  contest   Contest?   @relation(fields: [contestId], references: [id])
+  camp      Camp?      @relation(fields: [campId], references: [id])
+  hackathon Hackathon? @relation(fields: [hackathonId], references: [id])
+
+  @@map("calendar_events")
+}
