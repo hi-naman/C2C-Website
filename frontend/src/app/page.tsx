@@ -40,15 +40,11 @@ const features = [
 ];
 
 export default function Home() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const reduceMotion = useReducedMotion();
   const rootRef = useRef<HTMLDivElement | null>(null);
   const { theme } = useTheme();
-  const [isLight, setIsLight] = React.useState(false);
-
-  useEffect(() => {
-    setIsLight(theme === 'light');
-  }, [theme]);
+  const isLight = theme === 'light';
 
   const handleStart = () => {
     window.location.href = isAuthenticated ? '/dashboard' : `${API_BASE_URL}/api/auth/google`;

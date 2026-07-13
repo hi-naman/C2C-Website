@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { leaderboardService } from '@/services/leaderboard';
 import { contestService } from '@/services/contests';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +35,8 @@ export default function LeaderboardPage() {
   const isAdmin = user?.role === 'ADMIN';
 
   // Default to the logged-in user's college class year (or Year 1 as fallback)
-  const [selectedYear, setSelectedYear] = useState<number>(1);
+  const [selectedYearOverride, setSelectedYearOverride] = useState<number | null>(null);
+  const selectedYear = selectedYearOverride ?? user?.year ?? 1;
 
   // Sync Modal States
   const [isSyncOpen, setIsSyncOpen] = useState(false);
@@ -49,12 +49,6 @@ export default function LeaderboardPage() {
     unmatchedCount: number;
     unmatched: string[];
   } | null>(null);
-
-  useEffect(() => {
-    if (user?.year) {
-      setSelectedYear(user.year);
-    }
-  }, [user]);
 
   const { data: entries, isLoading, error } = useQuery({
     queryKey: ['leaderboard', selectedYear],
@@ -180,7 +174,7 @@ export default function LeaderboardPage() {
                 key={year}
                 variant="ghost"
                 size="sm"
-                onClick={() => setSelectedYear(year)}
+                onClick={() => setSelectedYearOverride(year)}
                 className={cn(
                   'rounded-lg text-xs font-medium px-4 py-1.5 h-8 transition-all',
                   selectedYear === year

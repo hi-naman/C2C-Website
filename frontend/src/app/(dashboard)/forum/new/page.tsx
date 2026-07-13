@@ -113,7 +113,7 @@ export default function NewForumPostPage() {
     }
 
     // Flush any typed tag value still in input before submission
-    let finalTags = [...tags];
+    const finalTags = [...tags];
     const cleanVal = tagInputValue.trim().toLowerCase();
     if (cleanVal && !finalTags.includes(cleanVal)) {
       finalTags.push(cleanVal);

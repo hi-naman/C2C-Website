@@ -8,14 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   LayoutDashboard,
-  Trophy,
   Layers,
   MessageSquare,
   Award,
   Calendar,
   Menu,
   LogOut,
-  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/shared/theme-toggle';
@@ -46,63 +44,23 @@ function NavItem({ href, label, icon: Icon, active, onClick }: NavItemProps) {
   );
 }
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+const navItems = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/contests', label: 'Events', icon: Layers },
+  { href: '/forum', label: 'Forum', icon: MessageSquare },
+  { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/leaderboard', label: 'Leaderboard', icon: Award },
+];
 
-  useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        router.push('/login');
-      } else if (user && !user.isProfileComplete) {
-        router.push('/complete-profile');
-      }
-    }
-  }, [isLoading, isAuthenticated, user, router]);
+interface SidebarContentProps {
+  user: any;
+  logout: () => void;
+  isActive: (href: string) => boolean;
+  onItemClick?: () => void;
+}
 
-  const navItems = [
-    { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { href: '/contests', label: 'Events', icon: Layers },
-    { href: '/forum', label: 'Forum', icon: MessageSquare },
-    { href: '/calendar', label: 'Calendar', icon: Calendar },
-    { href: '/leaderboard', label: 'Leaderboard', icon: Award },
-  ];
-
-  // Helper to determine active route
-  const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard';
-    }
-    if (href === '/hackathons') {
-      return (
-        pathname.startsWith('/hackathons') ||
-        pathname.startsWith('/contests') ||
-        pathname.startsWith('/sessions') ||
-        pathname.startsWith('/camps')
-      );
-    }
-    return pathname.startsWith(href);
-  };
-
-  const getPageTitle = () => {
-    const activeItem = navItems.find((item) => isActive(item.href));
-    return activeItem ? activeItem.label : 'C2C Platform';
-  };
-
-  if (isLoading || !isAuthenticated || (user && !user.isProfileComplete)) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background text-muted-foreground font-mono text-sm">
-        <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-          <span>Verifying credentials...</span>
-        </div>
-      </div>
-    );
-  }
-
-  const SidebarContent = ({ onItemClick }: { onItemClick?: () => void }) => (
+function SidebarContent({ user, logout, isActive, onItemClick }: SidebarContentProps) {
+  return (
     <div className="flex h-full flex-col justify-between p-6">
       <div className="space-y-6">
         {/* Branding */}
@@ -168,12 +126,61 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     </div>
   );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push('/login');
+      } else if (user && !user.isProfileComplete) {
+        router.push('/complete-profile');
+      }
+    }
+  }, [isLoading, isAuthenticated, user, router]);
+
+  // Helper to determine active route
+  const isActive = (href: string) => {
+    if (href === '/dashboard') {
+      return pathname === '/dashboard';
+    }
+    if (href === '/hackathons') {
+      return (
+        pathname.startsWith('/hackathons') ||
+        pathname.startsWith('/contests') ||
+        pathname.startsWith('/sessions') ||
+        pathname.startsWith('/camps')
+      );
+    }
+    return pathname.startsWith(href);
+  };
+
+  const getPageTitle = () => {
+    const activeItem = navItems.find((item) => isActive(item.href));
+    return activeItem ? activeItem.label : 'C2C Platform';
+  };
+
+  if (isLoading || !isAuthenticated || (user && !user.isProfileComplete)) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background text-muted-foreground font-mono text-sm">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+          <span>Verifying credentials...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-background flex animate-fade-in overflow-hidden">
       {/* Desktop Sidebar (Left Panel) */}
       <aside className="hidden md:block w-[260px] border-r border-border bg-card shrink-0 h-full overflow-hidden">
-        <SidebarContent />
+        <SidebarContent user={user} logout={logout} isActive={isActive} />
       </aside>
 
       {/* Main Content Area */}
@@ -195,7 +202,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Menu className="h-5 w-5" />
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-[260px] bg-card border-r border-border">
-                <SidebarContent onItemClick={() => setIsMobileOpen(false)} />
+                <SidebarContent user={user} logout={logout} isActive={isActive} onItemClick={() => setIsMobileOpen(false)} />
               </SheetContent>
             </Sheet>
 
