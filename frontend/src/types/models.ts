@@ -32,7 +32,7 @@ export interface Session {
   recordingUrl: string | null;
   slidesUrl: string | null;
   tags: string[];
-  yearTarget: YearTarget;
+  yearTarget: YearTarget[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -46,7 +46,7 @@ export interface Contest {
   accessCode: string | null;
   startTime: string; // ISO date string
   endTime: string; // ISO date string
-  yearTarget: YearTarget;
+  yearTarget: YearTarget[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -74,7 +74,7 @@ export interface Camp {
   venue: string | null;
   maxSeats: number | null;
   tags: string[];
-  yearTarget: YearTarget;
+  yearTarget: YearTarget[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -182,7 +182,7 @@ export interface CalendarEvent {
   eventType: EventType;
   date: string; // ISO date string
   endDate: string | null; // ISO date string
-  yearTarget: YearTarget;
+  yearTarget: YearTarget[];
   sessionId: string | null;
   contestId: string | null;
   campId: string | null;

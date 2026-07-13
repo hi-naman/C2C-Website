@@ -19,7 +19,7 @@ const applyLinkVisibility = (contest: any) => {
 
 export const getAllContests = async (yearTarget?: string) => {
   const contests = await prisma.contest.findMany({
-    where: yearTarget ? { yearTarget: yearTarget as any } : undefined,
+    where: yearTarget ? { yearTarget: { has: yearTarget as any } } : undefined,
     include: {
       creator: { select: { id: true, name: true, avatarUrl: true } },
     },
@@ -54,7 +54,7 @@ export const createContest = async (data: {
   accessCode?: string;
   startTime: Date;
   endTime: Date;
-  yearTarget: string;
+  yearTarget: string[];
   createdBy: string;
 }) => {
   return await prisma.contest.create({
@@ -72,7 +72,7 @@ export const updateContest = async (id: string, data: Partial<{
   accessCode: string;
   startTime: Date;
   endTime: Date;
-  yearTarget: string;
+  yearTarget: string[];
   }>) => {
   return await prisma.contest.update({
     where: { id },

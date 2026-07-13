@@ -10,7 +10,7 @@ import { YearTarget } from '@/types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, MapPin, User, Video, ExternalLink, Presentation, Pencil, Trash2, HelpCircle, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatYearTarget } from '@/lib/utils';
 import EventFormDialog from '../components/EventFormDialog';
 
 export default function SessionsPage() {
@@ -116,7 +116,7 @@ export default function SessionsPage() {
                   {/* Badge Headers */}
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[10px] font-mono border border-border bg-muted/40 text-muted-foreground px-2 py-0.5 rounded uppercase tracking-wider">
-                      {session.yearTarget} TARGET
+                      {formatYearTarget(session.yearTarget)} TARGET
                     </span>
 
                     <div className="flex items-center gap-2">

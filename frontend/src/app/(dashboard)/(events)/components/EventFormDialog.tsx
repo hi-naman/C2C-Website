@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { contestService } from '@/services/contests';
 import { hackathonService } from '@/services/hackathons';
 import { sessionService } from '@/services/sessions';
@@ -46,7 +47,7 @@ export default function EventFormDialog({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
-  const [yearTarget, setYearTarget] = useState('ALL');
+  const [yearTarget, setYearTarget] = useState<string[]>(['ALL']);
 
   // Contest fields
   const [hackerrankUrl, setHackerrankUrl] = useState('');
@@ -85,7 +86,14 @@ export default function EventFormDialog({
         setTitle(initialData.title || '');
         setDescription(initialData.description || '');
         setTags(initialData.tags ? initialData.tags.join(', ') : '');
-        setYearTarget(initialData.yearTarget || 'ALL');
+        const initialYearTarget = initialData.yearTarget;
+        if (Array.isArray(initialYearTarget)) {
+          setYearTarget(initialYearTarget);
+        } else if (typeof initialYearTarget === 'string') {
+          setYearTarget([initialYearTarget]);
+        } else {
+          setYearTarget(['ALL']);
+        }
 
         if (type === 'contests') {
           setHackerrankUrl(initialData.hackerrankUrl || '');
@@ -119,7 +127,7 @@ export default function EventFormDialog({
         setTitle('');
         setDescription('');
         setTags('');
-        setYearTarget('ALL');
+        setYearTarget(['ALL']);
 
         setHackerrankUrl('');
         setAccessCode('');
@@ -590,19 +598,83 @@ export default function EventFormDialog({
 
               {/* Tags & Year target (not for hackathons) */}
               {type !== 'hackathons' && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/80 block">Target Academic Year</label>
-                  <select
-                    value={yearTarget}
-                    onChange={(e) => setYearTarget(e.target.value)}
-                    className="w-full bg-background border border-border rounded-xl text-xs font-medium px-3 py-2.5 h-10 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary text-foreground cursor-pointer"
-                  >
-                    <option value="ALL">All Targets (General)</option>
-                    <option value="FIRST">Year 1</option>
-                    <option value="SECOND">Year 2</option>
-                    <option value="THIRD">Year 3</option>
-                    <option value="FOURTH">Year 4</option>
-                  </select>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/80 block">
+                    Target Academic Year
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 bg-background border border-border rounded-xl p-3">
+                    {/* All Years */}
+                    <label className={cn(
+                      "flex items-center gap-2 p-2 rounded-lg border text-xs font-medium cursor-pointer transition-all hover:bg-muted/40",
+                      yearTarget.includes('ALL') 
+                        ? "bg-secondary text-foreground border-border shadow-2xs font-semibold" 
+                        : "text-muted-foreground border-transparent"
+                    )}>
+                      <input
+                        type="checkbox"
+                        checked={yearTarget.includes('ALL')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setYearTarget(['ALL']);
+                          } else {
+                            setYearTarget(['ALL']);
+                          }
+                        }}
+                        className="sr-only"
+                      />
+                      <span className={cn(
+                        "w-3.5 h-3.5 rounded border border-muted-foreground/30 flex items-center justify-center text-[10px]",
+                        yearTarget.includes('ALL') && "bg-foreground border-foreground text-background"
+                      )}>
+                        {yearTarget.includes('ALL') && "✓"}
+                      </span>
+                      All Years
+                    </label>
+
+                    {/* Individual Years */}
+                    {[
+                      { val: 'FIRST', label: 'Year 1' },
+                      { val: 'SECOND', label: 'Year 2' },
+                      { val: 'THIRD', label: 'Year 3' },
+                      { val: 'FOURTH', label: 'Year 4' },
+                    ].map(({ val, label }) => {
+                      const isChecked = yearTarget.includes(val);
+                      return (
+                        <label key={val} className={cn(
+                          "flex items-center gap-2 p-2 rounded-lg border text-xs font-medium cursor-pointer transition-all hover:bg-muted/40",
+                          isChecked 
+                            ? "bg-secondary text-foreground border-border shadow-2xs font-semibold" 
+                            : "text-muted-foreground border-transparent"
+                        )}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setYearTarget((prev) => {
+                                  const filtered = prev.filter((y) => y !== 'ALL');
+                                  return [...filtered, val];
+                                });
+                              } else {
+                                setYearTarget((prev) => {
+                                  const updated = prev.filter((y) => y !== val);
+                                  return updated.length === 0 ? ['ALL'] : updated;
+                                });
+                              }
+                            }}
+                            className="sr-only"
+                          />
+                          <span className={cn(
+                            "w-3.5 h-3.5 rounded border border-muted-foreground/30 flex items-center justify-center text-[10px]",
+                            isChecked && "bg-foreground border-foreground text-background"
+                          )}>
+                            {isChecked && "✓"}
+                          </span>
+                          {label}
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 

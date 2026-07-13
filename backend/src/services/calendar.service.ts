@@ -13,7 +13,7 @@ const yearTargets = (year?: number): string[] | undefined => {
 
 const computeCalendar = async (year?: number) => {
   const targets = yearTargets(year);
-  const yearFilter = targets ? { yearTarget: { in: targets as any } } : {};
+  const yearFilter = targets ? { yearTarget: { hasSome: targets as any } } : {};
 
   //fetch from all 4 sources in parallel
   const [sessions, contests, camps, hackathons] = await Promise.all([
@@ -71,7 +71,7 @@ const computeCalendar = async (year?: number) => {
       title: h.title,
       date: h.regDeadline,
       endDate: h.submissionDeadline,
-      yearTarget: 'ALL',
+      yearTarget: ['ALL'],
     })),
   ];
 

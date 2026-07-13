@@ -3,7 +3,7 @@ import prisma from '../config/db';
 // Get all sessions — with optional year filter
 export const getAllSessions = async (yearTarget?: string) => {
   return await prisma.session.findMany({
-    where: yearTarget ? { yearTarget: yearTarget as any } : {},
+    where: yearTarget ? { yearTarget: { has: yearTarget as any } } : {},
     include: {
       creator: {
         select: {
@@ -43,7 +43,7 @@ export const createSession = async (data: {
   venue: string;
   slidesUrl?: string;
   tags: string[];
-  yearTarget: string;
+  yearTarget: string[];
   createdBy: string;
 }) => {
   return await prisma.session.create({
@@ -64,7 +64,7 @@ export const updateSession = async (id: string, data: Partial<{
   venue: string;
   slidesUrl: string;
   tags: string[];
-  yearTarget: string;
+  yearTarget: string[];
 }>) => {
   return await prisma.session.update({
     where: { id },

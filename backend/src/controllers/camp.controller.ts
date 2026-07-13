@@ -4,6 +4,12 @@ import * as campService from '../services/camp.service';
 import { z } from 'zod';
 import { invalidateCalendarCache } from '../services/calendar.service';
 
+const yearTargetSchema = z.preprocess((val) => {
+  if (typeof val === 'string') return [val];
+  if (Array.isArray(val)) return val;
+  return ['ALL'];
+}, z.array(z.enum(['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'ALL'])).min(1, 'At least one target year is required'));
+
 const createCampSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
@@ -13,7 +19,7 @@ const createCampSchema = z.object({
   venue: z.string().optional(),
   maxSeats: z.number().int().positive().optional(),
   tags: z.array(z.string()).default([]),
-  yearTarget: z.enum(['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'ALL']).default('ALL'),
+  yearTarget: yearTargetSchema.default(['ALL']),
 });
 
 const updateCampSchema = createCampSchema.partial();

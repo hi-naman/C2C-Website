@@ -3,6 +3,12 @@ import { JwtPayload } from '../utils/jwt';
 import * as sessionService from '../services/session.service';
 import { z } from 'zod';
 import { invalidateCalendarCache } from '../services/calendar.service';
+const yearTargetSchema = z.preprocess((val) => {
+  if (typeof val === 'string') return [val];
+  if (Array.isArray(val)) return val;
+  return ['ALL'];
+}, z.array(z.enum(['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'ALL'])).min(1, 'At least one target year is required'));
+
 // Zod schema for creating a session
 const createSessionSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -13,7 +19,7 @@ const createSessionSchema = z.object({
   venue: z.string().min(1, 'Venue is required'),
   slidesUrl: z.string().url().optional(),
   tags: z.array(z.string()).default([]),
-  yearTarget: z.enum(['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'ALL']).default('ALL'),
+  yearTarget: yearTargetSchema.default(['ALL']),
 });
 
 // Zod schema for updating a session

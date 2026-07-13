@@ -38,7 +38,8 @@ export const registerForCamp = async (req: Request, res: Response) => {
     }
 
     // 3. Check year eligibility
-    if (camp.yearTarget !== 'ALL' && camp.yearTarget !== yearToTarget(dbUser.year)) {
+    const userTarget = yearToTarget(dbUser.year);
+    if (!camp.yearTarget.includes('ALL' as any) && !camp.yearTarget.includes(userTarget as any)) {
       return res.status(403).json({
         success: false,
         message: 'This camp is not open for your year',

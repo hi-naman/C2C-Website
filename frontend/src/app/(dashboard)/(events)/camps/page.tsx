@@ -11,7 +11,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Calendar, MapPin, Users, Check, Flame, AlertCircle, Pencil, Trash2, ShieldAlert, Award, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatYearTarget } from '@/lib/utils';
 import EventFormDialog from '../components/EventFormDialog';
 
 export default function CampsPage() {
@@ -162,7 +162,7 @@ export default function CampsPage() {
                   {/* Badge Headers */}
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-[10px] font-mono border border-border bg-muted/40 text-muted-foreground px-2 py-0.5 rounded uppercase tracking-wider">
-                      {camp.yearTarget} TARGET
+                      {formatYearTarget(camp.yearTarget)} TARGET
                     </span>
 
                     <div className="flex items-center gap-2">
