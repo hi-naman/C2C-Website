@@ -47,12 +47,7 @@ export default function Home() {
   const [isLight, setIsLight] = React.useState(false);
 
   useEffect(() => {
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      setIsLight(systemTheme === 'light');
-    } else {
-      setIsLight(theme === 'light');
-    }
+    setIsLight(theme === 'light');
   }, [theme]);
 
   const handleStart = () => {
@@ -130,9 +125,11 @@ export default function Home() {
               Features
             </a>
             <ThemeToggle />
-            <Button onClick={handleStart} size="sm" className="cursor-target rounded-full bg-[#E0772E] text-white hover:bg-[#E0772E]/90 dark:bg-white dark:text-slate-950 dark:hover:bg-white/90">
-              Sign in
-            </Button>
+            {!isAuthenticated && (
+              <Button onClick={handleStart} size="sm" className="cursor-target rounded-full bg-[#E0772E] text-white hover:bg-[#E0772E]/90 dark:bg-white dark:text-slate-950 dark:hover:bg-white/90">
+                Sign in
+              </Button>
+            )}
           </nav>
         </div>
       </header>
@@ -189,10 +186,10 @@ export default function Home() {
                   className="cursor-target group rounded-[1.5rem] border border-border bg-card/50 p-5 backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-foreground/20 hover:bg-card/80 dark:border-white/10 dark:bg-white/6 dark:hover:border-white/20 dark:hover:bg-white/8"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-secondary text-[#E0772E] transition-transform group-hover:scale-105 dark:border-white/10 dark:bg-white/10">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border bg-secondary text-[#E0772E] transition-transform group-hover:scale-105 dark:border-white/10 dark:bg-white/10 dark:text-white/90">
                       <Icon className="h-5 w-5" />
                     </div>
-                    <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#E0772E]/80 dark:text-[#E0772E]/60">0{features.indexOf(feature) + 1}</span>
+                    <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-[#E0772E]/80 dark:text-white/40">0{features.indexOf(feature) + 1}</span>
                   </div>
                   <h3 className="mt-4 text-lg font-semibold tracking-tight text-foreground">{feature.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{feature.description}</p>
