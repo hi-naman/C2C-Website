@@ -1,10 +1,10 @@
 import prisma from '../config/db';
 
 export const getAllCamps = async (yearTarget?: string) => {
-  const where = yearTarget ? { yearTarget: { has: yearTarget as any } } : {};
+  const where = yearTarget ? { yearTarget } : {};
   
   return await prisma.camp.findMany({
-    where,
+    where: where as any,
     include: {
       creator: {
         select: { id: true, name: true, avatarUrl: true },
@@ -50,7 +50,7 @@ export const createCamp = async (data: {
   venue?: string;
   maxSeats?: number;
   tags: string[];
-  yearTarget: string[];
+  yearTarget: string;
   createdBy: string;
 }) => {
   return await prisma.camp.create({
@@ -71,7 +71,7 @@ export const updateCamp = async (id: string, data: Partial<{
   venue: string;
   maxSeats: number;
   tags: string[];
-  yearTarget: string[];
+  yearTarget: string;
 }>) => {
   return await prisma.camp.update({
     where: { id },

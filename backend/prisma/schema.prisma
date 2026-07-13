@@ -60,7 +60,7 @@ model Session {
   recordingUrl  String?
   slidesUrl     String?
   tags          String[]
-  yearTarget    YearTarget[] @default([ALL])
+  yearTarget    YearTarget @default(ALL)
   createdBy     String
   creator       User       @relation(fields: [createdBy], references: [id])
   createdAt     DateTime   @default(now())
@@ -79,7 +79,7 @@ model Contest {
   accessCode String?
   startTime      DateTime
   endTime        DateTime
-  yearTarget     YearTarget[] @default([ALL])
+  yearTarget     YearTarget @default(ALL)
   createdBy      String
   creator        User       @relation(fields: [createdBy], references: [id])
   createdAt      DateTime   @default(now())
@@ -121,7 +121,7 @@ model Camp {
   venue       String?
   maxSeats    Int?
   tags        String[]
-  yearTarget  YearTarget[] @default([ALL])
+  yearTarget  YearTarget @default(ALL)
   createdBy   String
   creator     User       @relation(fields: [createdBy], references: [id])
   createdAt   DateTime   @default(now())
@@ -269,7 +269,7 @@ model CalendarEvent {
   eventType  EventType
   date       DateTime
   endDate    DateTime?
-  yearTarget YearTarget[] @default([ALL])
+  yearTarget YearTarget @default(ALL)
 
   sessionId   String?   @unique
   contestId   String?   @unique

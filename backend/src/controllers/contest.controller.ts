@@ -3,12 +3,6 @@ import { JwtPayload } from '../utils/jwt';
 import * as contestService from '../services/contest.service';
 import { z } from 'zod';
 import { invalidateCalendarCache } from '../services/calendar.service';
-const yearTargetSchema = z.preprocess((val) => {
-  if (typeof val === 'string') return [val];
-  if (Array.isArray(val)) return val;
-  return ['ALL'];
-}, z.array(z.enum(['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'ALL'])).min(1, 'At least one target year is required'));
-
 const createContestSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
@@ -16,7 +10,7 @@ const createContestSchema = z.object({
   accessCode: z.string().optional(),
   startTime: z.string().datetime('Invalid start time'),
   endTime: z.string().datetime('Invalid end time'),
-  yearTarget: yearTargetSchema.default(['ALL']),
+  yearTarget: z.enum(['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'ALL']).default('ALL'),
 });
 
 const unlockSchema = z.object({
