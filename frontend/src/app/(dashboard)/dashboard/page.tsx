@@ -9,7 +9,7 @@ import { calendarService, CalendarEventResponse } from '@/services/calendar';
 import { contestService, ContestApiResponse } from '@/services/contests';
 import { forumService } from '@/services/forum';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn, formatYearTarget } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import {
   Trophy,
   Medal,
@@ -427,7 +427,7 @@ export default function DashboardPage() {
                         {contest.title}
                       </h4>
                       <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                        {formatYearTarget(contest.yearTarget)} target
+                        {contest.yearTarget} target
                       </p>
                     </div>
                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-primary shrink-0 transition-colors" />
