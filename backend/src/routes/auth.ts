@@ -49,7 +49,7 @@ router.get(
     res.cookie('token', token, {
       httpOnly: true,   // JS cannot read this
       secure: env.NODE_ENV === 'production', 
-      sameSite: 'lax',  // protects against CSRF attacks
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
 
@@ -68,7 +68,11 @@ router.get(
  *       200: { description: Logged out }
  */
 router.post('/logout', (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: env.NODE_ENV === 'production',
+    sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+  });
   res.json({ success: true, message: 'Logged out successfully' });
 });
 
