@@ -25,10 +25,15 @@ import { swaggerSpec } from './config/swagger';
 
 const app = express();
 
+const allowedOrigins = [
+  env.FRONTEND_URL,
+  env.FRONTEND_URL.replace('://', '://www.')
+];
+
 app.use(
   cors({
-    origin: env.FRONTEND_URL,   // list of allowed domains
-    credentials: true,           // allow cookies to be sent
+    origin: allowedOrigins,
+    credentials: true,
   })
 );
 
