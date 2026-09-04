@@ -1,8 +1,10 @@
 'use client';
 
 import React, { Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -56,23 +58,53 @@ function LoginContent() {
           </p>
         </div>
 
-        {errorParam && (
-          <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-3.5 text-center text-xs text-destructive">
-            {errorParam === 'unauthorized' 
-              ? 'Authentication failed. Please use your authorized college email.' 
-              : 'An error occurred during authentication. Please try again.'}
+        {errorParam === 'invalid_domain' && (
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 dark:border-amber-500/25 dark:bg-amber-500/10 p-4 text-left space-y-2">
+            <div className="flex items-center gap-2.5 text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <p className="text-xs font-semibold uppercase tracking-wider font-mono">College Email Required</p>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Registration is restricted to MNIT Jaipur students and staff. Please sign in using your official <strong className="font-semibold text-foreground">@mnit.ac.in</strong> email address.
+            </p>
           </div>
         )}
 
-        <div className="mt-8 space-y-6">
+        {errorParam && errorParam !== 'invalid_domain' && (
+          <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-left space-y-2">
+            <div className="flex items-center gap-2.5 text-destructive">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <p className="text-xs font-semibold uppercase tracking-wider font-mono">Authentication Failed</p>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {errorParam === 'unauthorized'
+                ? 'Your account is not authorized to access this platform. Please use an authorized college email.'
+                : 'An unexpected authentication error occurred. Please try signing in again.'}
+            </p>
+          </div>
+        )}
+
+        <div className="mt-8 space-y-4">
           <Button
             onClick={handleGoogleLogin}
             size="lg"
             className="w-full flex items-center justify-center gap-3"
           >
             <GoogleIcon className="h-4 w-4 fill-current shrink-0" />
-            Continue with Google
+            {errorParam === 'invalid_domain' ? 'Sign in with @mnit.ac.in' : 'Continue with Google'}
           </Button>
+
+          {errorParam && (
+            <div className="text-center">
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back to clean sign in
+              </Link>
+            </div>
+          )}
 
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-border"></div>

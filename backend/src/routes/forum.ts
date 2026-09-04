@@ -123,6 +123,25 @@ router.post('/:id/upvote', authenticate, forumController.toggleUpvote);
 
 /**
  * @openapi
+ * /api/forum/{id}/pin:
+ *   post:
+ *     summary: Toggle pin status of a post (admin only)
+ *     tags: [Forum]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Post pin status updated }
+ *       403: { description: Admin access required }
+ */
+router.post('/:id/pin', authenticate, forumController.togglePinPost);
+
+/**
+ * @openapi
  * /api/forum/{id}/comments:
  *   post:
  *     summary: Add a comment to a post

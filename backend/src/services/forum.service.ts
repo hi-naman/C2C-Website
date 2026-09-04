@@ -107,6 +107,17 @@ export const deletePost = async (id: string) => {
   return await prisma.forumPost.delete({ where: { id } });
 };
 
+// Toggle pin status (Admin)
+export const togglePinPost = async (id: string) => {
+  const post = await prisma.forumPost.findUnique({ where: { id } });
+  if (!post) return null;
+
+  return await prisma.forumPost.update({
+    where: { id },
+    data: { isPinned: !post.isPinned },
+  });
+};
+
 //---------------- Comments-------------------------------------
 
 export const createComment = async (data: {

@@ -83,6 +83,33 @@ export default function ForumPostDetailPage() {
     },
   });
 
+  // Pin mutation (Admin only)
+  const togglePinMutation = useMutation({
+    mutationFn: () => forumService.togglePinPost(id),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['forum-post', id] });
+      const previousPost = queryClient.getQueryData<any>(['forum-post', id]);
+
+      if (previousPost) {
+        queryClient.setQueryData(['forum-post', id], {
+          ...previousPost,
+          isPinned: !previousPost.isPinned,
+        });
+      }
+
+      return { previousPost };
+    },
+    onError: (err, variables, context: any) => {
+      if (context?.previousPost) {
+        queryClient.setQueryData(['forum-post', id], context.previousPost);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['forum-post', id] });
+      queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
+    },
+  });
+
   // Delete post mutation
   const deletePostMutation = useMutation({
     mutationFn: () => forumService.deletePost(id),
@@ -385,12 +412,29 @@ export default function ForumPostDetailPage() {
             </div>
 
             <div className="flex items-center gap-1.5">
-              {post.isPinned && (
+              {user?.role === 'ADMIN' ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => togglePinMutation.mutate()}
+                  disabled={togglePinMutation.isPending}
+                  className={cn(
+                    "h-8 px-2.5 text-[10px] font-mono font-bold rounded-lg border flex items-center gap-1.5 transition-all duration-200",
+                    post.isPinned
+                      ? "bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25"
+                      : "bg-muted/30 border-border text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  )}
+                  title={post.isPinned ? "Unpin post" : "Pin post"}
+                >
+                  <Pin className={cn("h-3.5 w-3.5", post.isPinned && "fill-amber-500")} />
+                  <span>{post.isPinned ? "PINNED" : "PIN POST"}</span>
+                </Button>
+              ) : post.isPinned ? (
                 <span className="flex items-center gap-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-1 rounded-md text-[10px] font-mono font-bold">
                   <Pin className="h-3 w-3 fill-amber-500" />
                   PINNED
                 </span>
-              )}
+              ) : null}
 
               {isPostAuthor && (
                 <Button

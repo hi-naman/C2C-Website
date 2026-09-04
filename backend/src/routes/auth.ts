@@ -31,19 +31,22 @@ router.get(
  *     responses:
  *       302: { description: Redirects to frontend with auth cookie set }
  */
-router.get(
-  '/google/callback',
-  passport.authenticate('google', {
-    session: false,
-    failureRedirect: `${env.FRONTEND_URL}/login?error=unauthorized`,
-  }),
-  (req, res) => {
-    const user = req.user as any;
+router.get('/google/callback', (req, res, next) => {
+  passport.authenticate('google', { session: false }, (err: any, user: any, info: any) => {
+    if (err) {
+      console.error('Google OAuth callback error:', err);
+      return res.redirect(`${env.FRONTEND_URL}/login?error=auth_failed`);
+    }
+
+    if (!user) {
+      const errorParam = info?.message === 'invalid_domain' ? 'invalid_domain' : 'unauthorized';
+      return res.redirect(`${env.FRONTEND_URL}/login?error=${errorParam}`);
+    }
 
     const token = signToken({
       userId: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
     });
 
     res.cookie('token', token, {
@@ -53,10 +56,9 @@ router.get(
       maxAge: 7 * 24 * 60 * 60 * 1000, 
     });
 
-    
     res.redirect(`${env.FRONTEND_URL}/dashboard`);
-  }
-);
+  })(req, res, next);
+});
 
 /**
  * @openapi

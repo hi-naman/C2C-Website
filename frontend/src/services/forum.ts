@@ -64,6 +64,15 @@ export const forumService = {
   },
 
   /**
+   * Toggles pinned status on a post (Admin only)
+   */
+  togglePinPost: async (id: string): Promise<ForumPost> => {
+    return apiClient<ForumPost>(`/api/forum/${id}/pin`, {
+      method: 'POST',
+    });
+  },
+
+  /**
    * Adds a new comment to a post
    */
   createComment: async (postId: string, content: string): Promise<ForumComment> => {

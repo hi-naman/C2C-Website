@@ -171,13 +171,11 @@ export default function DashboardPage() {
 
   // ── Derived Data ──
 
-  // Find user's leaderboard entry
   const userLeaderboardEntry = leaderboard?.find(
     (entry) => entry.userId === user?.id
   );
   const totalParticipants = leaderboard?.length ?? 0;
 
-  // Filter upcoming events (future only, sorted, top 5)
   const now = new Date();
   const upcomingEvents = calendarEvents
     ? calendarEvents
@@ -186,24 +184,20 @@ export default function DashboardPage() {
         .slice(0, 5)
     : [];
 
-  // Active contests (between startTime and endTime)
   const activeContests = contests
     ? contests.filter(
         (c) => getContestStatus(c.startTime, c.endTime) === 'ACTIVE'
       )
     : [];
 
-  // Trending forum posts (sorted by upvotes, top 3)
   const trendingPosts = forumPosts
     ? [...forumPosts]
         .sort((a, b) => b.upvoteCount - a.upvoteCount)
         .slice(0, 3)
     : [];
 
-  // Leaderboard top 5
   const topFive = leaderboard ? leaderboard.slice(0, 5) : [];
 
-  // Today's date display
   const todayLabel = now.toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -212,24 +206,24 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="relative space-y-8 animate-fade-in">
+    <div className="relative space-y-6 sm:space-y-8 animate-fade-in max-w-full overflow-x-hidden">
       {/* ── Section 1: Welcome Header ── */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">
+        <h2 className="text-2xl font-bold tracking-tight text-foreground truncate">
           Welcome back, {user?.name}
         </h2>
         <p className="text-sm text-muted-foreground mt-1">{todayLabel}</p>
       </div>
 
       {/* ── Section 2: KPI Metric Cards ── */}
-      <div className="grid gap-6 sm:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
         {/* Leaderboard Rank Card */}
-        <div className="rounded-xl border border-border bg-card p-6 shadow-xs transition-all duration-200 hover:scale-[1.02] hover:border-foreground/10">
+        <div className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xs transition-all duration-200 hover:scale-[1.02] hover:border-foreground/10">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">
               Leaderboard Rank
             </span>
-            <Trophy className="h-4 w-4 text-brand-accent" />
+            <Trophy className="h-4 w-4 text-brand-accent shrink-0" />
           </div>
           {isLoadingLeaderboard ? (
             <div className="mt-2.5 space-y-2">
@@ -241,7 +235,7 @@ export default function DashboardPage() {
               <p className="mt-2.5 text-3xl font-bold text-foreground">
                 #{userLeaderboardEntry.rank}
               </p>
-              <p className="mt-1.5 text-xs text-muted-foreground">
+              <p className="mt-1.5 text-xs text-muted-foreground truncate">
                 Score {userLeaderboardEntry.totalScore.toLocaleString()} ·{' '}
                 {totalParticipants} participants in Year {user?.year}
               </p>
@@ -259,12 +253,12 @@ export default function DashboardPage() {
         </div>
 
         {/* HackerRank Card */}
-        <div className="rounded-xl border border-border bg-card p-6 shadow-xs transition-all duration-200 hover:scale-[1.02] hover:border-foreground/10">
+        <div className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-xs transition-all duration-200 hover:scale-[1.02] hover:border-foreground/10">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-mono tracking-widest text-muted-foreground uppercase">
               HackerRank
             </span>
-            <Code className="h-4 w-4 text-brand-accent" />
+            <Code className="h-4 w-4 text-brand-accent shrink-0" />
           </div>
           <p className="mt-2.5 text-lg font-semibold truncate text-foreground">
             {user?.hackerrankUsername || 'Not connected'}
@@ -280,14 +274,14 @@ export default function DashboardPage() {
       {/* ── Section 3: Main Content Grid ── */}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left Column — Upcoming Events Timeline */}
-        <div className="lg:col-span-2 rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
+        <div className="lg:col-span-2 rounded-xl border border-border bg-card shadow-xs overflow-hidden min-w-0 flex flex-col h-full">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-border/60">
             <h3 className="text-xs font-semibold font-mono uppercase tracking-wider text-foreground">
               Upcoming Events
             </h3>
             <Link
               href="/calendar"
-              className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
               View calendar
               <ChevronRight className="h-3 w-3" />
@@ -297,18 +291,18 @@ export default function DashboardPage() {
           {isLoadingCalendar ? (
             <div className="divide-y divide-border">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-4 p-4 px-6">
+                <div key={i} className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 px-4 sm:px-6">
                   <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
-                  <div className="flex-1 space-y-2">
+                  <div className="flex-1 space-y-2 min-w-0">
                     <Skeleton className="h-4 w-3/4" />
                     <Skeleton className="h-3 w-1/2" />
                   </div>
-                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-4 w-16 shrink-0" />
                 </div>
               ))}
             </div>
           ) : upcomingEvents.length === 0 ? (
-            <div className="p-12 text-center space-y-3">
+            <div className="p-8 sm:p-12 text-center space-y-3">
               <Calendar className="mx-auto h-10 w-10 text-muted-foreground/25" />
               <h4 className="text-sm font-semibold text-foreground">
                 No upcoming events
@@ -329,16 +323,16 @@ export default function DashboardPage() {
                   <Link
                     key={event.id}
                     href={detailPath}
-                    className="flex items-center gap-4 p-4 px-6 hover:bg-muted/10 transition-colors group"
+                    className="flex items-center gap-3 sm:gap-4 p-3.5 sm:p-4 px-4 sm:px-6 hover:bg-muted/10 transition-colors group min-w-0"
                   >
                     {/* Date badge */}
-                    <div className="flex flex-col items-center justify-center h-11 w-11 shrink-0 rounded-xl bg-muted border border-border font-mono leading-none">
-                      <span className="text-[9px] font-bold text-muted-foreground uppercase">
+                    <div className="flex flex-col items-center justify-center h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-xl bg-muted border border-border font-mono leading-none">
+                      <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase">
                         {new Date(event.date)
                           .toLocaleString('en-US', { month: 'short' })
                           .toUpperCase()}
                       </span>
-                      <span className="text-base font-extrabold text-foreground mt-0.5">
+                      <span className="text-sm sm:text-base font-extrabold text-foreground mt-0.5">
                         {new Date(event.date).getDate()}
                       </span>
                     </div>
@@ -348,7 +342,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            'inline-flex items-center gap-1 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded border',
+                            'inline-flex items-center gap-1 text-[9px] font-mono font-semibold px-1.5 py-0.5 rounded border shrink-0',
                             badge.colorClass
                           )}
                         >
@@ -356,17 +350,17 @@ export default function DashboardPage() {
                           {badge.label}
                         </span>
                       </div>
-                      <h4 className="text-sm font-semibold text-foreground truncate mt-1 group-hover:text-primary transition-colors">
+                      <h4 className="text-xs sm:text-sm font-semibold text-foreground truncate mt-1 group-hover:text-primary transition-colors">
                         {event.title}
                       </h4>
-                      <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                      <p className="text-[10px] sm:text-[11px] text-muted-foreground font-mono mt-0.5 truncate">
                         {formatEventDate(event.date)}
                       </p>
                     </div>
 
                     {/* Relative time */}
-                    <div className="shrink-0 text-right">
-                      <span className="text-[10px] font-mono font-semibold text-primary">
+                    <div className="shrink-0 text-right pl-1">
+                      <span className="text-[9px] sm:text-[10px] font-mono font-semibold text-primary">
                         {getRelativeTime(event.date)}
                       </span>
                     </div>
@@ -378,10 +372,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Right Column — Stacked Sidebar Widgets */}
-        <div className="space-y-6">
+        <div className="space-y-6 min-w-0">
           {/* Widget 1: Active Contests */}
-          <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/60">
+          <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden min-w-0">
+            <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-border/60">
               <h3 className="text-xs font-semibold font-mono uppercase tracking-wider text-foreground flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
@@ -391,7 +385,7 @@ export default function DashboardPage() {
               </h3>
               <Link
                 href="/contests"
-                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
               >
                 All
                 <ChevronRight className="h-3 w-3" />
@@ -409,7 +403,7 @@ export default function DashboardPage() {
               </div>
             ) : activeContests.length === 0 ? (
               <div className="p-6 text-center space-y-2">
-                <Flame className="mx-auto h-8 w-8 text-muted-foreground/20" />
+                <Flame className="mx-auto h-7 w-7 text-muted-foreground/20" />
                 <p className="text-xs text-muted-foreground">
                   No active contests right now
                 </p>
@@ -420,13 +414,13 @@ export default function DashboardPage() {
                   <Link
                     key={contest.id}
                     href={`/contests/${contest.id}`}
-                    className="flex items-center justify-between p-4 px-5 hover:bg-muted/10 transition-colors group"
+                    className="flex items-center justify-between p-3.5 px-4 sm:px-5 hover:bg-muted/10 transition-colors group gap-2 min-w-0"
                   >
                     <div className="min-w-0 flex-1">
                       <h4 className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                         {contest.title}
                       </h4>
-                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                      <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
                         {contest.yearTarget} target
                       </p>
                     </div>
@@ -438,14 +432,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Widget 2: Trending Discussions */}
-          <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/60">
+          <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden min-w-0">
+            <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-3.5 border-b border-border/60">
               <h3 className="text-xs font-semibold font-mono uppercase tracking-wider text-foreground">
                 Trending Discussions
               </h3>
               <Link
                 href="/forum"
-                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0"
               >
                 All
                 <ChevronRight className="h-3 w-3" />
@@ -463,7 +457,7 @@ export default function DashboardPage() {
               </div>
             ) : trendingPosts.length === 0 ? (
               <div className="p-6 text-center space-y-2">
-                <MessageSquare className="mx-auto h-8 w-8 text-muted-foreground/20" />
+                <MessageSquare className="mx-auto h-7 w-7 text-muted-foreground/20" />
                 <p className="text-xs text-muted-foreground">
                   No discussions yet
                 </p>
@@ -474,7 +468,7 @@ export default function DashboardPage() {
                   <Link
                     key={post.id}
                     href={`/forum/${post.id}`}
-                    className="block p-4 px-5 hover:bg-muted/10 transition-colors group"
+                    className="block p-3.5 px-4 sm:px-5 hover:bg-muted/10 transition-colors group min-w-0"
                   >
                     <h4 className="text-xs font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                       {post.title}
@@ -484,11 +478,11 @@ export default function DashboardPage() {
                     </p>
                     <div className="flex items-center gap-3 mt-2 text-[10px] font-mono text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <ThumbsUp className="h-3 w-3" />
+                        <ThumbsUp className="h-3 w-3 shrink-0" />
                         {post.upvoteCount}
                       </span>
                       <span className="flex items-center gap-1">
-                        <MessageSquare className="h-3 w-3" />
+                        <MessageSquare className="h-3 w-3 shrink-0" />
                         {post._count?.comments ?? 0}
                       </span>
                     </div>
@@ -501,14 +495,14 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Section 4: Leaderboard Preview ── */}
-      <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/60">
-          <h3 className="text-xs font-semibold font-mono uppercase tracking-wider text-foreground">
+      <div className="rounded-xl border border-border bg-card shadow-xs overflow-hidden min-w-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-border/60">
+          <h3 className="text-xs font-semibold font-mono uppercase tracking-wider text-foreground truncate">
             Top Performers — Year {user?.year}
           </h3>
           <Link
             href="/leaderboard"
-            className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors shrink-0 ml-2"
           >
             Full leaderboard
             <ChevronRight className="h-3 w-3" />
@@ -520,20 +514,20 @@ export default function DashboardPage() {
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="flex items-center justify-between p-3.5 px-6"
+                className="flex items-center justify-between p-3 px-4 sm:px-6"
               >
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-7 w-7 rounded-full" />
-                  <Skeleton className="h-7 w-7 rounded-full" />
+                <div className="flex items-center gap-3 min-w-0">
+                  <Skeleton className="h-7 w-7 rounded-full shrink-0" />
+                  <Skeleton className="h-7 w-7 rounded-full shrink-0" />
                   <Skeleton className="h-4 w-24" />
                 </div>
-                <Skeleton className="h-5 w-12 rounded" />
+                <Skeleton className="h-5 w-12 rounded shrink-0" />
               </div>
             ))}
           </div>
         ) : topFive.length === 0 ? (
-          <div className="p-10 text-center space-y-2">
-            <Trophy className="mx-auto h-10 w-10 text-muted-foreground/20" />
+          <div className="p-8 sm:p-10 text-center space-y-2">
+            <Trophy className="mx-auto h-9 w-9 text-muted-foreground/20" />
             <p className="text-xs text-muted-foreground">
               No leaderboard data for Year {user?.year} yet
             </p>
@@ -544,12 +538,12 @@ export default function DashboardPage() {
               <div
                 key={entry.userId}
                 className={cn(
-                  'flex items-center justify-between p-3.5 px-6 transition-colors hover:bg-muted/10',
+                  'flex items-center justify-between p-3 px-4 sm:px-6 transition-colors hover:bg-muted/10 gap-3 min-w-0',
                   entry.userId === user?.id &&
                     'bg-primary/5 border-y border-primary/10'
                 )}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                   <div className="shrink-0 flex items-center justify-center">
                     {renderLeaderboardRankBadge(entry.rank)}
                   </div>
@@ -558,23 +552,25 @@ export default function DashboardPage() {
                     <img
                       src={entry.user.avatarUrl}
                       alt={entry.user.name}
-                      className="h-7 w-7 rounded-full border border-border shrink-0"
+                      className="h-6 w-6 sm:h-7 sm:w-7 rounded-full border border-border shrink-0 object-cover"
                     />
                   ) : (
-                    <div className="h-7 w-7 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-[10px] shrink-0">
+                    <div className="h-6 w-6 sm:h-7 sm:w-7 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-[10px] shrink-0">
                       {entry.user.name.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  <span className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
-                    {entry.user.name}
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-xs sm:text-sm font-semibold text-foreground truncate">
+                      {entry.user.name}
+                    </span>
                     {entry.userId === user?.id && (
-                      <span className="text-[9px] font-mono font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded">
+                      <span className="text-[9px] font-mono font-normal bg-primary/20 text-primary px-1.5 py-0.5 rounded shrink-0">
                         You
                       </span>
                     )}
-                  </span>
+                  </div>
                 </div>
-                <span className="text-sm font-bold text-foreground font-mono shrink-0">
+                <span className="text-xs sm:text-sm font-bold text-foreground font-mono shrink-0">
                   {entry.totalScore.toLocaleString()}
                 </span>
               </div>

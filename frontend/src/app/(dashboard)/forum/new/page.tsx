@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { forumService } from '@/services/forum';
 import { useUpload } from '@/hooks/use-upload';
+import { useForumDrafts } from '@/hooks/use-forum-drafts';
 import { TiptapEditor } from '@/components/shared/tiptap-editor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,18 +13,27 @@ import {
   Image as ImageIcon,
   Loader2,
   X,
-  Plus,
   ArrowLeft,
   AlertCircle,
+  Save,
+  Check,
+  Clock,
+  RotateCcw
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
-
 export default function NewForumPostPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const draftIdParam = searchParams.get('draftId');
+
   const queryClient = useQueryClient();
   const { uploadImage, isUploading } = useUpload();
+  const { saveDraft, deleteDraft, getDraft, getLatestDraft, isLoaded: isDraftsLoaded } = useForumDrafts();
+
+  // Active draft ID tracking
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(draftIdParam);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -33,10 +43,99 @@ export default function NewForumPostPage() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Draft feedback UI state
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+  const [availableDraftBanner, setAvailableDraftBanner] = useState<any | null>(null);
+
+  // Load draft if specified in URL param or check for latest draft on initial mount
+  useEffect(() => {
+    if (!isDraftsLoaded) return;
+
+    if (draftIdParam) {
+      const existing = getDraft(draftIdParam);
+      if (existing) {
+        setTitle(existing.title || '');
+        setContent(existing.content || '');
+        setTags(existing.tags || []);
+        setImageUrls(existing.imageUrls || []);
+        setActiveDraftId(existing.id);
+        setLastSavedAt(existing.updatedAt);
+        return;
+      }
+    }
+
+    // Check if there is an existing un-paramed latest draft
+    const latest = getLatestDraft();
+    if (latest && !title && !content && tags.length === 0) {
+      setAvailableDraftBanner(latest);
+    }
+  }, [isDraftsLoaded, draftIdParam, getDraft, getLatestDraft]);
+
+  // Restore latest draft handler
+  const handleRestoreDraft = (draft: any) => {
+    setTitle(draft.title || '');
+    setContent(draft.content || '');
+    setTags(draft.tags || []);
+    setImageUrls(draft.imageUrls || []);
+    setActiveDraftId(draft.id);
+    setLastSavedAt(draft.updatedAt);
+    setAvailableDraftBanner(null);
+  };
+
+  const handleDismissDraftBanner = () => {
+    setAvailableDraftBanner(null);
+  };
+
+  // Perform draft save
+  const triggerSaveDraft = useCallback(
+    (isManual = false) => {
+      const saved = saveDraft({
+        id: activeDraftId || undefined,
+        title,
+        content,
+        tags,
+        imageUrls,
+      });
+
+      if (saved) {
+        setActiveDraftId(saved.id);
+        setLastSavedAt(saved.updatedAt);
+        setSaveStatus('saved');
+        if (isManual) {
+          setTimeout(() => setSaveStatus('idle'), 3000);
+        }
+      }
+    },
+    [activeDraftId, title, content, tags, imageUrls, saveDraft]
+  );
+
+  // Debounced auto-save effect as user types
+  useEffect(() => {
+    // Only auto-save if user has typed something meaningful
+    const cleanTitle = title.trim();
+    const cleanContent = content.replace(/<[^>]*>/g, '').trim();
+
+    if (!cleanTitle && !cleanContent && tags.length === 0 && imageUrls.length === 0) {
+      return;
+    }
+
+    setSaveStatus('saving');
+    const timer = setTimeout(() => {
+      triggerSaveDraft(false);
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [title, content, tags, imageUrls, triggerSaveDraft]);
+
   // Mutation to create post
   const createPostMutation = useMutation({
     mutationFn: forumService.createPost,
     onSuccess: () => {
+      // Clear local draft upon publication
+      if (activeDraftId) {
+        deleteDraft(activeDraftId);
+      }
       queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
       router.push('/forum');
     },
@@ -50,7 +149,6 @@ export default function NewForumPostPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Limit maximum files to 3
     if (imageUrls.length >= 3) {
       setFormError('You can upload a maximum of 3 images per post.');
       return;
@@ -80,16 +178,36 @@ export default function NewForumPostPage() {
     setTags((prev) => prev.filter((_, i) => i !== indexToRemove));
   };
 
-  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
-      e.preventDefault();
-      const cleanVal = tagInputValue.trim().replace(/,$/, '').toLowerCase();
+  const commitCurrentTagInput = useCallback(() => {
+    const cleanVal = tagInputValue.trim().replace(/^#+/, '').replace(/[, ]+$/g, '').toLowerCase();
+    if (cleanVal) {
+      if (!tags.includes(cleanVal)) {
+        setTags((prev) => [...prev, cleanVal]);
+      }
+      setTagInputValue('');
+    }
+  }, [tagInputValue, tags]);
+
+  const handleTagInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    // Auto-commit tag when user types a comma or space on mobile keypads
+    if (val.endsWith(',') || val.endsWith(' ')) {
+      const cleanVal = val.trim().replace(/^#+/, '').replace(/[, ]+$/g, '').toLowerCase();
       if (cleanVal) {
         if (!tags.includes(cleanVal)) {
           setTags((prev) => [...prev, cleanVal]);
         }
         setTagInputValue('');
+        return;
       }
+    }
+    setTagInputValue(val);
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
+      e.preventDefault();
+      commitCurrentTagInput();
     } else if (e.key === 'Backspace' && tagInputValue === '') {
       setTags((prev) => prev.slice(0, -1));
     }
@@ -99,20 +217,17 @@ export default function NewForumPostPage() {
     e.preventDefault();
     setFormError(null);
 
-    // Validate inputs
     if (!title.trim() || title.trim().length < 5) {
       setFormError('Title must be at least 5 characters long.');
       return;
     }
 
-    // Strip HTML tags to validate actual content length
     const cleanContent = content.replace(/<[^>]*>/g, '').trim();
     if (!cleanContent || cleanContent.length < 10) {
       setFormError('Post content must be at least 10 characters long.');
       return;
     }
 
-    // Flush any typed tag value still in input before submission
     const finalTags = [...tags];
     const cleanVal = tagInputValue.trim().toLowerCase();
     if (cleanVal && !finalTags.includes(cleanVal)) {
@@ -127,23 +242,84 @@ export default function NewForumPostPage() {
     });
   };
 
+  const formatSavedTime = (isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      {/* Back button */}
-      <Link
-        href="/forum"
-        className="inline-flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors duration-200"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to discussions
-      </Link>
+    <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
+      {/* Top Header & Auto-save status */}
+      <div className="flex items-center justify-between">
+        <Link
+          href="/forum"
+          className="inline-flex items-center gap-2 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors duration-200"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to discussions
+        </Link>
+
+        {/* Draft save status indicator */}
+        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
+          {saveStatus === 'saving' && (
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground/80">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Saving draft...
+            </span>
+          )}
+          {saveStatus === 'saved' && lastSavedAt && (
+            <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+              <Check className="h-3.5 w-3.5" />
+              Draft saved at {formatSavedTime(lastSavedAt)}
+            </span>
+          )}
+          {saveStatus === 'idle' && lastSavedAt && (
+            <span className="inline-flex items-center gap-1.5 text-muted-foreground/60">
+              <Clock className="h-3.5 w-3.5" />
+              Draft saved {formatSavedTime(lastSavedAt)}
+            </span>
+          )}
+        </div>
+      </div>
 
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground">Launch a Discussion</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Share tips, reference links, and code insights. Supports rich formatting and checklists.
+          Share tips, reference links, and code insights. Unsaved changes are automatically backed up as drafts.
         </p>
       </div>
+
+      {/* Restore Unsaved Draft Banner */}
+      {availableDraftBanner && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl border border-primary/20 bg-primary/5 text-xs">
+          <div className="flex items-center gap-2.5">
+            <RotateCcw className="h-4 w-4 text-primary shrink-0" />
+            <div>
+              <p className="font-semibold text-foreground">Restore your previous draft?</p>
+              <p className="text-muted-foreground">
+                Found an unfinished draft: &quot;{availableDraftBanner.title || 'Untitled Post'}&quot;
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <Button
+              type="button"
+              onClick={() => handleRestoreDraft(availableDraftBanner)}
+              className="h-8 px-3 text-xs rounded-lg"
+            >
+              Restore Draft
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleDismissDraftBanner}
+              className="h-8 px-2 text-xs rounded-lg text-muted-foreground hover:text-foreground"
+            >
+              Dismiss
+            </Button>
+          </div>
+        </div>
+      )}
 
       {formError && (
         <div className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive font-mono">
@@ -174,7 +350,7 @@ export default function NewForumPostPage() {
         {/* Tags */}
         <div className="space-y-2">
           <label htmlFor="tags-input" className="text-xs font-mono font-semibold uppercase text-muted-foreground/80">
-            Tags (Press Enter, comma, or Tab to add)
+            Tags (Press Enter, Space, Comma, or tap + Add)
           </label>
           <div className="flex flex-wrap items-center gap-2 p-2 bg-background border border-border rounded-xl focus-within:ring-2 focus-within:ring-brand-accent/20 focus-within:border-brand-accent/50 transition-all min-h-11">
             {tags.map((tag, i) => (
@@ -192,15 +368,28 @@ export default function NewForumPostPage() {
                 </button>
               </span>
             ))}
-            <input
-              id="tags-input"
-              type="text"
-              placeholder={tags.length === 0 ? "e.g. algorithms, hackerrank, interview" : ""}
-              value={tagInputValue}
-              onChange={(e) => setTagInputValue(e.target.value)}
-              onKeyDown={handleTagInputKeyDown}
-              className="bg-transparent border-0 ring-0 outline-none flex-1 min-w-[120px] text-sm text-foreground placeholder:text-muted-foreground/60 h-7"
-            />
+            <div className="flex-1 flex items-center gap-1.5 min-w-[140px]">
+              <input
+                id="tags-input"
+                type="text"
+                enterKeyHint="done"
+                placeholder={tags.length === 0 ? "e.g. algorithms, hackerrank, interview" : "Add tag..."}
+                value={tagInputValue}
+                onChange={handleTagInputChange}
+                onKeyDown={handleTagInputKeyDown}
+                onBlur={commitCurrentTagInput}
+                className="bg-transparent border-0 ring-0 outline-none flex-1 w-full text-sm text-foreground placeholder:text-muted-foreground/60 h-7"
+              />
+              {tagInputValue.trim().length > 0 && (
+                <button
+                  type="button"
+                  onClick={commitCurrentTagInput}
+                  className="px-2 py-0.5 text-xs font-mono font-semibold bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all shrink-0"
+                >
+                  + Add
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Recommended tags suggestions */}
@@ -297,34 +486,46 @@ export default function NewForumPostPage() {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-3 pt-4 border-t border-border/50">
-          <Button
-            type="submit"
-            disabled={createPostMutation.isPending || isUploading}
-            className="bg-foreground text-background hover:bg-foreground/90 hover:scale-[1.02] transition-all duration-200 px-6 rounded-xl font-medium"
-          >
-            {createPostMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Submitting...
-              </>
-            ) : (
-              'Submit Discussion'
-            )}
-          </Button>
+        <div className="flex items-center justify-between pt-4 border-t border-border/50">
+          <div className="flex items-center gap-3">
+            <Button
+              type="submit"
+              disabled={createPostMutation.isPending || isUploading}
+              className="bg-foreground text-background hover:bg-foreground/90 hover:scale-[1.02] transition-all duration-200 px-6 rounded-xl font-medium"
+            >
+              {createPostMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Discussion'
+              )}
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              disabled={createPostMutation.isPending || isUploading}
+              onClick={() => triggerSaveDraft(true)}
+              className="border-border hover:bg-muted rounded-xl flex items-center gap-2 text-xs font-mono"
+            >
+              <Save className="h-3.5 w-3.5" />
+              Save Draft
+            </Button>
+          </div>
 
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             disabled={createPostMutation.isPending || isUploading}
             onClick={() => router.push('/forum')}
-            className="border-border hover:bg-muted rounded-xl"
+            className="text-muted-foreground hover:text-foreground rounded-xl text-xs"
           >
             Cancel
           </Button>
         </div>
       </form>
     </div>
-
   );
 }

@@ -17,12 +17,12 @@ passport.use(
 
         // Step 1 - check email exists
         if (!email) {
-          return done(new Error('No email found from Google'));
+          return done(null, false, { message: 'no_email' });
         }
 
         // Step 2 - check college email domain
         if (env.ALLOWED_EMAIL_DOMAIN !== '*' && !email.endsWith(`@${env.ALLOWED_EMAIL_DOMAIN}`)) {
-          return done(new Error(`Only @${env.ALLOWED_EMAIL_DOMAIN} emails are allowed`));
+          return done(null, false, { message: 'invalid_domain' });
         }
 
         // Step 3 - check if user already exists

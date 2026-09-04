@@ -163,6 +163,31 @@ export const toggleUpvote = async (req: Request, res: Response) => {
   }
 };
 
+// POST /api/forum/:id/pin - admin toggle pin
+export const togglePinPost = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const user = req.user as unknown as JwtPayload;
+
+    if (user.role !== 'ADMIN') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only admins can pin or unpin posts',
+      });
+    }
+
+    const updated = await forumService.togglePinPost(id);
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    console.error('Toggle pin post error:', error);
+    res.status(500).json({ success: false, message: 'Failed to toggle pin post' });
+  }
+};
+
 // POST /api/forum/:id/comments
 export const createComment = async (req: Request, res: Response) => {
   try {
