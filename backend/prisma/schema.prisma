@@ -238,13 +238,16 @@ model ForumComment {
   id        String   @id @default(uuid())
   postId    String
   authorId  String
+  parentId  String?
   content   String
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  post   ForumPost @relation(fields: [postId], references: [id])
-  author User      @relation(fields: [authorId], references: [id])
+  post    ForumPost      @relation(fields: [postId], references: [id])
+  author  User           @relation(fields: [authorId], references: [id])
+  parent  ForumComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies ForumComment[] @relation("CommentReplies")
 
   @@map("forum_comments")
 }

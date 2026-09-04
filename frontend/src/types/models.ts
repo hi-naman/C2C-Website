@@ -161,12 +161,14 @@ export interface ForumComment {
   id: string;
   postId: string;
   authorId: string;
+  parentId?: string | null;
   content: string;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
   post?: ForumPost;
   author?: User;
+  replies?: ForumComment[];
 }
 
 export interface Upvote {

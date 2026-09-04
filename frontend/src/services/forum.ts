@@ -73,12 +73,16 @@ export const forumService = {
   },
 
   /**
-   * Adds a new comment to a post
+   * Adds a new comment (or nested reply) to a post
    */
-  createComment: async (postId: string, content: string): Promise<ForumComment> => {
+  createComment: async (
+    postId: string,
+    content: string,
+    parentId?: string
+  ): Promise<ForumComment> => {
     return apiClient<ForumComment>(`/api/forum/${postId}/comments`, {
       method: 'POST',
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, parentId }),
     });
   },
 

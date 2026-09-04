@@ -25,10 +25,256 @@ import {
   Edit2,
   Save,
   X,
+  CornerDownRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
+
+interface CommentNode {
+  id: string;
+  postId: string;
+  authorId: string;
+  parentId?: string | null;
+  content: string;
+  isDeleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+  author?: {
+    id: string;
+    name: string;
+    avatarUrl: string | null;
+    role: string;
+  };
+  children: CommentNode[];
+}
+
+function buildCommentTree(comments: any[]): CommentNode[] {
+  if (!comments || comments.length === 0) return [];
+  const map = new Map<string, CommentNode>();
+  const roots: CommentNode[] = [];
+
+  comments.forEach((comment) => {
+    map.set(comment.id, { ...comment, children: [] });
+  });
+
+  comments.forEach((comment) => {
+    const node = map.get(comment.id)!;
+    if (comment.parentId && map.has(comment.parentId)) {
+      map.get(comment.parentId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  return roots;
+}
+
+function CommentItem({
+  comment,
+  user,
+  depth = 0,
+  activeReplyId,
+  setActiveReplyId,
+  replyText,
+  setReplyText,
+  onReplySubmit,
+  onDeleteComment,
+  isSubmittingReply,
+  formatDate,
+}: {
+  comment: CommentNode;
+  user: any;
+  depth?: number;
+  activeReplyId: string | null;
+  setActiveReplyId: (id: string | null) => void;
+  replyText: string;
+  setReplyText: (text: string) => void;
+  onReplySubmit: (parentId: string) => void;
+  onDeleteComment: (commentId: string) => void;
+  isSubmittingReply: boolean;
+  formatDate: (dateStr: string) => string;
+}) {
+  const [showReplies, setShowReplies] = useState(false);
+  const replyCount = comment.children?.length || 0;
+
+  const isCommentAuthor = user?.id === comment.authorId;
+  const isAuthorizedToDeleteComment = isCommentAuthor || user?.role === 'ADMIN' || user?.role === 'SENIOR';
+  const isReplyingToThis = activeReplyId === comment.id;
+
+  // Auto-expand replies when user opens reply editor or posts reply
+  React.useEffect(() => {
+    if (isReplyingToThis) {
+      setShowReplies(true);
+    }
+  }, [isReplyingToThis]);
+
+  const indentClass = depth > 0 ? "ml-2 sm:ml-5 pl-2.5 sm:pl-4 border-l border-border/60 mt-3 space-y-3" : "";
+
+  return (
+    <div className={indentClass}>
+      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-3 flex gap-3 sm:gap-4 shadow-xs animate-fade-in">
+        {/* Left Avatar */}
+        <div className="shrink-0">
+          {comment.author?.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={comment.author.avatarUrl}
+              alt={comment.author.name}
+              className="h-8 w-8 rounded-full border border-border"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-xs text-muted-foreground">
+              {comment.author?.name?.charAt(0).toUpperCase()}
+            </div>
+          )}
+        </div>
+
+        {/* Right comment content container */}
+        <div className="flex-1 space-y-2 min-w-0">
+          {/* Header bar */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-semibold text-foreground truncate">{comment.author?.name}</span>
+              <span className="text-[8px] font-mono bg-secondary border border-border px-1.5 py-0 rounded text-muted-foreground uppercase font-bold shrink-0">
+                {comment.author?.role}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-mono text-muted-foreground/80">{formatDate(comment.createdAt)}</span>
+
+              {isAuthorizedToDeleteComment && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDeleteComment(comment.id)}
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-6 w-6 rounded-md"
+                  title="Delete Comment"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
+          <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
+            {comment.content}
+          </p>
+
+          {/* Action Row: Reply action & Expand/Collapse replies button */}
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            {user && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (isReplyingToThis) {
+                    setActiveReplyId(null);
+                    setReplyText('');
+                  } else {
+                    setActiveReplyId(comment.id);
+                    setReplyText('');
+                    setShowReplies(true);
+                  }
+                }}
+                className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-muted-foreground hover:text-primary transition-colors"
+              >
+                <CornerDownRight className="h-3 w-3" />
+                {isReplyingToThis ? 'Cancel Reply' : 'Reply'}
+              </button>
+            )}
+
+            {replyCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowReplies((prev) => !prev)}
+                className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-brand-accent hover:text-brand-accent/80 transition-colors bg-brand-accent/10 border border-brand-accent/20 px-2 py-0.5 rounded-md"
+              >
+                {showReplies ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+                <span>
+                  {showReplies
+                    ? `Hide ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`
+                    : `View ${replyCount} ${replyCount === 1 ? 'reply' : 'replies'}`}
+                </span>
+              </button>
+            )}
+          </div>
+
+          {/* Inline Reply Form */}
+          {isReplyingToThis && (
+            <div className="pt-2 space-y-2 animate-fade-in">
+              <Textarea
+                placeholder={`Replying to ${comment.author?.name}...`}
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="bg-background border-border focus-visible:ring-brand-accent/20 focus-visible:border-brand-accent/50 rounded-xl min-h-[70px] text-xs"
+                autoFocus
+              />
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    onReplySubmit(comment.id);
+                    setShowReplies(true);
+                  }}
+                  disabled={isSubmittingReply || !replyText.trim()}
+                  className="h-8 px-3 text-xs bg-foreground text-background hover:bg-foreground/90 rounded-lg flex items-center gap-1.5 font-mono"
+                >
+                  {isSubmittingReply ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5" />
+                  )}
+                  <span>Post Reply</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setActiveReplyId(null);
+                    setReplyText('');
+                  }}
+                  className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground rounded-lg"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Nested Children Thread */}
+      {replyCount > 0 && showReplies && (
+        <div className="space-y-3 animate-fade-in">
+          {comment.children.map((child) => (
+            <CommentItem
+              key={child.id}
+              comment={child}
+              user={user}
+              depth={depth + 1}
+              activeReplyId={activeReplyId}
+              setActiveReplyId={setActiveReplyId}
+              replyText={replyText}
+              setReplyText={setReplyText}
+              onReplySubmit={onReplySubmit}
+              onDeleteComment={onDeleteComment}
+              isSubmittingReply={isSubmittingReply}
+              formatDate={formatDate}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ForumPostDetailPage() {
   const params = useParams();
@@ -38,6 +284,8 @@ export default function ForumPostDetailPage() {
   const id = params.id as string;
 
   const [commentText, setCommentText] = useState('');
+  const [activeReplyId, setActiveReplyId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
 
   // Inline post editing states
@@ -53,6 +301,10 @@ export default function ForumPostDetailPage() {
     queryFn: () => forumService.getPostById(id),
     staleTime: 1000 * 30, // 30 seconds stale cache
   });
+
+  const commentTree = React.useMemo(() => {
+    return buildCommentTree(post?.comments || []);
+  }, [post?.comments]);
 
   // Upvote mutation
   const upvoteMutation = useMutation({
@@ -122,11 +374,14 @@ export default function ForumPostDetailPage() {
     },
   });
 
-  // Create comment mutation
+  // Create comment mutation (supports top-level and nested replies)
   const createCommentMutation = useMutation({
-    mutationFn: (content: string) => forumService.createComment(id, content),
+    mutationFn: ({ content, parentId }: { content: string; parentId?: string }) =>
+      forumService.createComment(id, content, parentId),
     onSuccess: () => {
       setCommentText('');
+      setActiveReplyId(null);
+      setReplyText('');
       queryClient.invalidateQueries({ queryKey: ['forum-post', id] });
       queryClient.invalidateQueries({ queryKey: ['forum-posts'] });
     },
@@ -213,7 +468,15 @@ export default function ForumPostDetailPage() {
 
     if (!commentText.trim()) return;
 
-    createCommentMutation.mutate(commentText.trim());
+    createCommentMutation.mutate({ content: commentText.trim() });
+  };
+
+  const handleReplySubmit = (parentId: string) => {
+    setFormError(null);
+
+    if (!replyText.trim()) return;
+
+    createCommentMutation.mutate({ content: replyText.trim(), parentId });
   };
 
   const handleDeleteComment = (commentId: string) => {
@@ -560,74 +823,28 @@ export default function ForumPostDetailPage() {
         </form>
 
         {/* Comments timeline list */}
-        {(!post.comments || post.comments.length === 0) ? (
+        {(!commentTree || commentTree.length === 0) ? (
           <div className="text-center py-10 rounded-xl border border-dashed border-border/80 bg-card/25 text-xs text-muted-foreground shadow-xs">
             No comments yet. Share your thoughts above!
           </div>
         ) : (
           <div className="space-y-4">
-            {post.comments.map((comment) => {
-              const isCommentAuthor = user?.id === comment.authorId;
-              const isAuthorizedToDeleteComment = isCommentAuthor || user?.role === 'ADMIN' || user?.role === 'SENIOR';
-
-              return (
-                <div
-                  key={comment.id}
-                  className="rounded-xl border border-border bg-card p-5 space-y-3 flex gap-4 shadow-xs animate-fade-in"
-                >
-                  {/* Left Avatar */}
-                  <div className="shrink-0">
-                    {comment.author?.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={comment.author.avatarUrl}
-                        alt={comment.author.name}
-                        className="h-8 w-8 rounded-full border border-border"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-xs text-muted-foreground">
-                        {comment.author?.name?.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Right comment content container */}
-                  <div className="flex-1 space-y-2 min-w-0">
-                    {/* Header bar */}
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-xs font-semibold text-foreground truncate">{comment.author?.name}</span>
-                        <span className="text-[8px] font-mono bg-secondary border border-border px-1.5 py-0 rounded text-muted-foreground uppercase font-bold shrink-0">
-                          {comment.author?.role}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] font-mono text-muted-foreground/80">{formatDate(comment.createdAt)}</span>
-                        
-                        {isAuthorizedToDeleteComment && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteComment(comment.id)}
-                            disabled={deleteCommentMutation.isPending}
-                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-6 w-6 rounded-md"
-                            title="Delete Comment"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Content */}
-                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap break-words">
-                      {comment.content}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+            {commentTree.map((comment) => (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                user={user}
+                depth={0}
+                activeReplyId={activeReplyId}
+                setActiveReplyId={setActiveReplyId}
+                replyText={replyText}
+                setReplyText={setReplyText}
+                onReplySubmit={handleReplySubmit}
+                onDeleteComment={handleDeleteComment}
+                isSubmittingReply={createCommentMutation.isPending}
+                formatDate={formatDate}
+              />
+            ))}
           </div>
         )}
       </section>

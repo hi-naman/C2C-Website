@@ -14,6 +14,7 @@ const updatePostSchema = createPostSchema.partial();
 
 const createCommentSchema = z.object({
   content: z.string().min(1, 'Comment cannot be empty'),
+  parentId: z.string().optional(),
 });
 
 // GET /api/forum
@@ -213,6 +214,7 @@ export const createComment = async (req: Request, res: Response) => {
       postId,
       authorId: user.userId,
       content: parsed.data.content,
+      parentId: parsed.data.parentId,
     });
 
     res.status(201).json({ success: true, data: comment });

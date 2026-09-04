@@ -124,7 +124,16 @@ export const createComment = async (data: {
   postId: string;
   authorId: string;
   content: string;
+  parentId?: string;
 }) => {
+  if (data.parentId) {
+    const parentComment = await prisma.forumComment.findUnique({
+      where: { id: data.parentId },
+    });
+    if (!parentComment || parentComment.postId !== data.postId) {
+      throw new Error('Parent comment not found for this discussion.');
+    }
+  }
   return await prisma.forumComment.create({ data });
 };
 
